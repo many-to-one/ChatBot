@@ -24,12 +24,19 @@
             <button onclick="sendMessage(event)" type="submit">➤</button>
         </form>
     
-        <form action="/" method="post" class="send-cont">
+        <!-- <form action="http://127.0.0.1:8006/ai_chat/chat" method="post" class="send-cont">
             <div class="input-container">
                 <textarea id="textArea" name="user_input" placeholder="Type your message..." required></textarea>
                 <button onclick="sendMessage(event)" type="submit">➤</button>
             </div>
+        </form> -->
+        <form onsubmit="sendMessage(event)" class="send-cont">
+            <div class="input-container">
+                <textarea id="textArea" name="user_input" placeholder="Type your message..." required></textarea>
+                <button type="submit">➤</button>
+            </div>
         </form>
+        
         <span class="material-symbols-outlined">
             download
         </span>

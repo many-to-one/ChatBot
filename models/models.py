@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -21,10 +21,11 @@ class User(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=text("NOW()"), nullable=False)
     is_admin = Column(Boolean, server_default=false(), nullable=False)
 
-    chat_user = relationship(
+    chats = relationship(
         "ChatHistory",
-        back_populates="chat_user"
+        back_populates="chat_user"  # Link to ChatHistory.chat_user
     )
+
 
 class ChatHistory(Base):
     __tablename__ = "chat_history"
@@ -33,6 +34,8 @@ class ChatHistory(Base):
     user_input = Column(Text, nullable=False)
     response_text = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=func.now()) 
+
+    chat_user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
 
     chat_user = relationship(
         "User",

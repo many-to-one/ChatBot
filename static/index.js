@@ -25,7 +25,7 @@ async function sendMessage(event) {
     formData.append('user_input', userMessage);
 
     // Send request to FastAPI
-    await axios.post("/", formData)
+    await axios.post("http://127.0.0.1:8006/ai_chat/chat", formData)
         .then(response => {
             console.log('axios response ---', response);
 
