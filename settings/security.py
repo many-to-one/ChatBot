@@ -2,6 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from db.db import get_db
 from fastapi import HTTPException, status
+from fastapi.responses import RedirectResponse, JSONResponse
 from jose import JWTError, jwt
 # from .settings import settings
 from passlib.context import CryptContext
@@ -20,9 +21,20 @@ import os
 load_dotenv()
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+### https://github.com/ThirVondukr/passlib
+pwd_context = CryptContext(
+    schemes=["sha512_crypt"]
+)
+
 # auth_scheme = HTTPBearer()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+import secrets
+
+def generate_csrf_token():
+    return secrets.token_hex(16)
 
 
 def get_password_hash(password):
@@ -46,7 +58,7 @@ async def get_tokens_pair(db, id):
 
     result = await db.execute(select(User).filter(User.id == id))
     user = result.scalar_one_or_none()
-    user.access_token = access_token
+    # user.access_token = access_token
     user.refresh_token = refresh_token
     db.add(user)
     await db.commit()
@@ -67,16 +79,29 @@ async def get_tokens_pair(db, id):
 # Create New Access Token via Refresh Token
 async def get_new_access_token(refresh_token: str):
 
+    print("get_new_access_token refresh_token -------------------", refresh_token)
+
     try:
         payload = jwt.decode(refresh_token, os.getenv("SECRET_KEY"), algorithms=os.getenv("algorithm"))
+        print("get_new_access_token payload -------------------", payload)
         new_access_token =  await create_access_token(payload)
+        print("get_new_access_token new_access_token -------------------", new_access_token)
         new_refresh_token = await create_refresh_token(payload)
-        response = NewAccessTokenResponse(
-            access_token=new_access_token,
-            refresh_token=new_refresh_token,
+        print("get_new_access_token new_refresh_token -------------------", new_refresh_token)
+        # response = NewAccessTokenResponse(
+        #     access_token=new_access_token,
+        #     refresh_token=new_refresh_token,
+        # )
+        response = JSONResponse(content={"message": "New access token issued."})
+        response.set_cookie(
+            key="access_token",
+            value=new_access_token,
+            httponly=False,  # Prevents JavaScript access use with True
+            # secure=True,    # Use True in production with HTTPS
+            samesite="Strict"  # Prevents cross-origin usage
         )
 
-        return response
+        return new_access_token
     
     except JWTError:
         raise HTTPException(
@@ -101,6 +126,7 @@ async def create_refresh_token(data: dict):
 
     payload = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=7)
+    # expire = datetime.now(timezone.utc) + timedelta(minutes=2)
     payload.update({"exp": expire}) 
 
     return jwt.encode(payload, os.getenv("SECRET_KEY"), os.getenv("algorithm"))
@@ -126,8 +152,50 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     user_id = user.get('id')
     result = await db.execute(select(User).filter(User.id == user_id))
     current_user = result.scalar_one_or_none()
+
+    if not current_user:
+        # Redirect to login page if user is not authenticated
+        return RedirectResponse(url="/login")
     
     return current_user
+
+
+async def get_current_user_with_cookies(token: str, refresh_token: str, db) -> User:
+
+    print('get_current_user_with_cookies -------------------', token)
+    # Decode and validate the token
+    try:
+        user = await get_token_payload(token)
+    except:
+        new_access_token = await get_new_access_token(refresh_token)
+        user = await get_token_payload(new_access_token)
+        print('user ------------------- after refresh', user)
+    user_id = user.get("id")
+
+    print('MAIN PAGE------------------- user', user)
+
+    # Query the database for the user
+    result = await db.execute(select(User).filter(User.id == user_id))
+    current_user = result.scalar_one_or_none()
+    print('refresh_token-------------------', refresh_token)
+
+    # Handle the case where the user is not found
+    if not current_user:
+
+        try:
+            new_access_token = get_new_access_token(refresh_token)
+            print('new_access_token-------------------', new_access_token)
+            user = await get_token_payload(token)
+            user_id = user.get("id")
+            result = await db.execute(select(User).filter(User.id == user_id))
+            current_user = result.scalar_one_or_none()
+            return current_user
+        except:
+            # Redirect to login page if user is not authenticated
+            return RedirectResponse(url="/login")
+    
+    return current_user
+
 
 
 async def check_admin(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

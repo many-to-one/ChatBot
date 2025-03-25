@@ -57,19 +57,31 @@ async def login(
     ):
     
     __orm = OrmService(db)
-
-    login_user = await __orm.login(form=user_form)
-    return login_user
     
-    # try:
-    #     login_user = await __orm.login(form=user_form)
-    #     # print('********login_user***********', login_user)
-    #     return login_user
-    # except Exception as e:
-    #     raise HTTPException(
-    #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #             detail=f'{e}',
-    #         )
+    try:
+        login_user = await __orm.login(form=user_form)
+        print('********login_user***********', login_user)
+        response.set_cookie(
+            key="access_token",
+            value=login_user.access_token,
+            httponly=False,  # Prevents JavaScript access use True
+            # secure=True,    # Requires HTTPS
+            samesite="Strict"  # Ensures the cookie is sent only for same-origin requests
+        )
+
+        response.set_cookie(
+            key="refresh_token",
+            value=login_user.refresh_token,
+            httponly=False,  # Prevents JavaScript access use True
+            # secure=True,    # Requires HTTPS
+            samesite="Strict"  # Ensures the cookie is sent only for same-origin requests
+        )
+        return login_user
+    except Exception as e:
+        raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f'{e}',
+            )
 
 
 @router.get("/refresh_token", status_code=status.HTTP_200_OK, response_model=NewAccessTokenResponse)

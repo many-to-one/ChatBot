@@ -16,6 +16,7 @@ class User(Base):
     photo = Column(String, nullable=True)
     email = Column(String, unique=True, index=True)
     password = Column(String, nullable=False)
+    refresh_token = Column(String, unique=True, index=True, nullable=True)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, server_default=false(), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=text("NOW()"), nullable=False)

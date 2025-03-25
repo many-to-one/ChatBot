@@ -1,21 +1,25 @@
+from db import db
 from fastapi import FastAPI, Form, Depends, Request, UploadFile
-from fastapi.responses import JSONResponse, HTMLResponse, Response
+from fastapi.responses import JSONResponse, HTMLResponse, Response, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from sqlalchemy.orm import Session
+from schemas.users import UserBase
+from settings.security import generate_csrf_token, get_current_user, get_current_user_with_cookies
+from routes import auth, chats, ai_chat
+from db.db import get_db
 
-import requests
-import re
-import base64
-import shutil
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.middleware.sessions import SessionMiddleware
+
+import requests, re, os, base64, shutil
 
 from dotenv import load_dotenv
-import os
 
-from routes import auth, chats, ai_chat
+
 
 load_dotenv()
 
@@ -27,6 +31,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SECRET_KEY")  # Ensure the secret key is securely set
 )
 
 
@@ -43,9 +52,40 @@ app.include_router(ai_chat.router)
 
 
 @app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    data = {"title": "Chatbot"}
-    return templates.TemplateResponse("index.html", {"request": request, **data})
+async def root(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+    ):
+
+    csrf_token = generate_csrf_token()
+    request.session["csrf_token"] = csrf_token
+
+    access_token = request.cookies.get("access_token") 
+    refresh_token = request.cookies.get("refresh_token") 
+
+    try:
+        user = await get_current_user_with_cookies(access_token, refresh_token, db)
+        print('MAIN PAGE------------------- user', user)
+        data = {
+            "title": "Chatbot",
+            "csrf_token": csrf_token,
+            }
+        return templates.TemplateResponse("index.html", {"request": request, **data})
+    except:
+        return RedirectResponse(url="/login")
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def root(
+        request: Request,
+    ):
+    csrf_token = generate_csrf_token()
+    request.session["csrf_token"] = csrf_token
+    data = {
+        "title": "Login",
+        "csrf_token": csrf_token,
+        }
+    return templates.TemplateResponse("login.html", {"request": request, **data})
 
 
 

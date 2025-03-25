@@ -15,7 +15,7 @@ class UserLoginForm(BaseModel):
 class TokenResponse(BaseModel):
     id: int
     username: str
-    photo: Optional[str] = None
+    # photo: Optional[str] = None
     access_token: str
     refresh_token: str
 

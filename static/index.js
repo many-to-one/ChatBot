@@ -1,3 +1,19 @@
+function getCookie(name) {
+    const cookieArr = document.cookie.split(";"); // Split cookies into an array
+
+    for (let cookie of cookieArr) {
+        const cookiePair = cookie.trim().split("="); // Split the key-value pair
+
+        if (cookiePair[0] === name) {
+            return cookiePair[1]; // Return the cookie value
+        }
+    }
+
+    return null; // Return null if the cookie isn't found
+}
+
+const access_token = getCookie("access_token");
+
 async function sendMessage(event) {
     event.preventDefault(); // Prevent page reload
 
@@ -24,8 +40,19 @@ async function sendMessage(event) {
     var formData = new FormData();
     formData.append('user_input', userMessage);
 
+    console.log("Access Token:", access_token);
+
     // Send request to FastAPI
-    await axios.post("http://127.0.0.1:8006/ai_chat/chat", formData)
+    await axios.post("http://127.0.0.1:8006/ai_chat/chat", 
+        {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": `Bearer ${access_token}`
+            },
+            withCredentials: true
+        },
+            formData,
+        )
         .then(response => {
             console.log('axios response ---', response);
 
@@ -80,7 +107,15 @@ async function imgGenerate(event) {
     var formData = new FormData();
     formData.append('user_input', userMessage);
 
-    await axios.post("/image-generate", formData)
+    await axios.post("/image-generate", 
+        {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Authorization": `Bearer ${access_token}`
+            },
+            withCredentials: true
+        },
+        formData)
         .then(response => {
             console.log('axios response ---', response);
 
