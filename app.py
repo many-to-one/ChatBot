@@ -54,25 +54,18 @@ app.include_router(ai_chat.router)
 @app.get("/", response_class=HTMLResponse)
 async def root(
         request: Request,
+        current_user: UserBase = Depends(get_current_user_with_cookies),
         db: AsyncSession = Depends(get_db),
     ):
 
     csrf_token = generate_csrf_token()
     request.session["csrf_token"] = csrf_token
 
-    access_token = request.cookies.get("access_token") 
-    refresh_token = request.cookies.get("refresh_token") 
-
-    try:
-        user = await get_current_user_with_cookies(access_token, refresh_token, db)
-        print('MAIN PAGE------------------- user', user)
-        data = {
+    data = {
             "title": "Chatbot",
             "csrf_token": csrf_token,
             }
-        return templates.TemplateResponse("index.html", {"request": request, **data})
-    except:
-        return RedirectResponse(url="/login")
+    return templates.TemplateResponse("index.html", {"request": request, **data})
 
 
 @app.get("/login", response_class=HTMLResponse)

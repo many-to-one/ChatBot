@@ -43,16 +43,17 @@ async function sendMessage(event) {
     console.log("Access Token:", access_token);
 
     // Send request to FastAPI
-    await axios.post("http://127.0.0.1:8006/ai_chat/chat", 
-        {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${access_token}`
-            },
-            withCredentials: true
-        },
+    const resp = await axios.post("http://127.0.0.1:8006/ai_chat/chat", 
+        // {
+        //     headers: {
+        //         "Content-Type": "application/x-www-form-urlencoded",
+        //         "Authorization": `Bearer ${access_token}`
+        //     },
+        //     withCredentials: true
+        // },
             formData,
         )
+    // console.log('axios response ---', resp);
         .then(response => {
             console.log('axios response ---', response);
 
@@ -75,7 +76,8 @@ async function sendMessage(event) {
             chatWindow.scrollTop = chatWindow.scrollHeight;
         })
         .catch(error => {
-            console.error("Error:", error);
+            console.error('access_token ??? ---', access_token);
+            console.error("Error:", error, access_token);
         });
 }
 

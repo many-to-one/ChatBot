@@ -1,7 +1,7 @@
 # import datetime
 from datetime import datetime, timedelta, timezone
 from db.db import get_db
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from jose import JWTError, jwt
 # from .settings import settings
@@ -160,12 +160,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     return current_user
 
 
-async def get_current_user_with_cookies(token: str, refresh_token: str, db) -> User:
+# async def get_current_user_with_cookies(token: str, refresh_token: str, db) -> User:
+async def get_current_user_with_cookies(request: Request, db: AsyncSession = Depends(get_db)) -> User:
 
-    print('get_current_user_with_cookies -------------------', token)
+    access_token = request.cookies.get("access_token") 
+    refresh_token = request.cookies.get("refresh_token")
+
+    print('get_current_user_with_cookies -------------------', access_token)
     # Decode and validate the token
     try:
-        user = await get_token_payload(token)
+        user = await get_token_payload(access_token)
     except:
         new_access_token = await get_new_access_token(refresh_token)
         user = await get_token_payload(new_access_token)
