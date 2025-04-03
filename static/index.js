@@ -108,15 +108,16 @@ async function imgGenerate(event) {
 
     var formData = new FormData();
     formData.append('user_input', userMessage);
+    console.log('userMessage ---', userMessage);
 
-    await axios.post("/image-generate", 
-        {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${access_token}`
-            },
-            withCredentials: true
-        },
+    await axios.post("http://127.0.0.1:8006/ai_chat/image-generate", 
+        // {
+        //     headers: {
+        //         "Content-Type": "application/x-www-form-urlencoded",
+        //         "Authorization": `Bearer ${access_token}`
+        //     },
+        //     withCredentials: true
+        // },
         formData)
         .then(response => {
             console.log('axios response ---', response);

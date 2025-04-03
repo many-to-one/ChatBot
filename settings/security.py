@@ -167,6 +167,11 @@ async def get_current_user_with_cookies(request: Request, db: AsyncSession = Dep
     refresh_token = request.cookies.get("refresh_token")
 
     print('get_current_user_with_cookies -------------------', access_token)
+
+    if access_token is None or refresh_token is None:
+        raise HTTPException(status_code=307, detail="Redirecting", headers={"Location": "http://127.0.0.1:8006/login"})
+        # return RedirectResponse(url="http://127.0.0.1:8006/login")
+
     # Decode and validate the token
     try:
         user = await get_token_payload(access_token)
@@ -189,7 +194,7 @@ async def get_current_user_with_cookies(request: Request, db: AsyncSession = Dep
         try:
             new_access_token = get_new_access_token(refresh_token)
             print('new_access_token-------------------', new_access_token)
-            user = await get_token_payload(token)
+            user = await get_token_payload(access_token)
             user_id = user.get("id")
             result = await db.execute(select(User).filter(User.id == user_id))
             current_user = result.scalar_one_or_none()

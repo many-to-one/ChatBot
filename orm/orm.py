@@ -40,12 +40,23 @@ class OrmService:
 
     async def create(self, model, form):
 
+        print(f'create {model} *****************************', model)
+        print(f'create {form} *****************************', form)
+
         if isinstance(form, dict):
+            print(f'dict *****************************')
             obj_dict = form
+            # obj_dict["chat_user"] = str(obj_dict["chat_user"]) 
+            print(f'obj_dict - dict *****************************', obj_dict)
         else:
+            print(f'not dict *****************************')
             obj_dict = form.dict()
+        # if isinstance(form, RedirectResponse):
+        #     form = await form.json()
+        # obj_dict = form if isinstance(form, dict) else form.dict()
 
         obj = model(**obj_dict)
+        print(f'create end {obj} *****************************', obj)
 
         self.db.add(obj)
         await self.db.commit()

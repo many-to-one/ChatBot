@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from schemas.users import UserBase
 from settings.security import generate_csrf_token, get_current_user, get_current_user_with_cookies
-from routes import auth, chats, ai_chat
+from routes import chats, ai_chat, auth, image_generate
 from db.db import get_db
 
 from sqlalchemy.orm import Session
@@ -49,6 +49,7 @@ templates = Jinja2Templates(directory="templates")
 app.include_router(auth.router)
 app.include_router(chats.router)
 app.include_router(ai_chat.router)
+app.include_router(image_generate.router)
 
 
 @app.get("/", response_class=HTMLResponse)

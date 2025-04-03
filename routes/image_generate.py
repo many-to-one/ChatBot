@@ -1,15 +1,17 @@
 import os, re, requests
 
-from fastapi import FastAPI, Form, Depends, Request, UploadFile, APIRouter
+from fastapi import FastAPI, Form, Depends, Request, UploadFile, APIRouter, status
 from fastapi.responses import JSONResponse, HTMLResponse, Response
 
 import base64
 from translate import Translator
 
+from schemas.chats import ChatBase
 
-router = APIRouter(tags=["ChatArea"], prefix="/")
 
-router.post("/image-generate")
+router = APIRouter(tags=["AiImage"], prefix="/ai_img")
+
+router.post("/image-generate", status_code=status.HTTP_201_CREATED, response_model=ChatBase)
 async def handle_chat_input(request: Request, user_input: str = Form(...)):
     """
     Receives user input, processes it, and returns the response as JSON.
